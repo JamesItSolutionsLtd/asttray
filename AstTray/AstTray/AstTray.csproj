@@ -97,7 +97,7 @@
     <EmbeddedResource Include="UserControls\Click2CallControl.resx">
       <DependentUpon>Click2CallControl.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="App.config.example" />
+    <None Include="App.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

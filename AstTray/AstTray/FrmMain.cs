@@ -16,6 +16,8 @@ namespace AstTray
 {
     public partial class AstTray : Form
     {
+        private string Channel => ConfigurationManager.AppSettings["astPeerType"] + "/" + ConfigurationManager.AppSettings["astPeerID"];
+
         public AstTray()
         {
             InitializeComponent();
@@ -28,16 +30,13 @@ namespace AstTray
 
             if (ConfigurationManager.AppSettings["astHost"] == null)
             {
-                MessageBox.Show(
-                    "Unable to read configuration file. Maybe you need to rename App.config.example to App.config and add your own details to it?");
+                MessageBox.Show("Unable to read configuration file. Maybe you need to rename App.config.example to App.config and add your own details to it?");
                 Environment.Exit(0);
             }
 
             try
             {
-                AstCon = new ManagerConnection(ConfigurationManager.AppSettings["astHost"],
-                    int.Parse(ConfigurationManager.AppSettings["astPort"]),
-                    ConfigurationManager.AppSettings["astUser"], ConfigurationManager.AppSettings["astPass"]);
+                AstCon = new ManagerConnection(ConfigurationManager.AppSettings["astHost"], int.Parse(ConfigurationManager.AppSettings["astPort"]), ConfigurationManager.AppSettings["astUser"], ConfigurationManager.AppSettings["astPass"]);
 
                 AstCon.NewState += astCon_NewState;
                 AstCon.Link += astCon_Link; // added to support AMI 1.0 (Asterisk 1.4)
@@ -49,9 +48,7 @@ namespace AstTray
                     switch (ConfigurationManager.AppSettings["sharedDirectoryType"].ToUpper())
                     {
                         case "CISCODIRECTORY":
-                            SharedDiretory =
-                                CiscoDirectoryHelper.GetCiscoDirectory(
-                                    ConfigurationManager.AppSettings["sharedDirectoryPath"]);
+                            SharedDiretory = CiscoDirectoryHelper.GetCiscoDirectory(ConfigurationManager.AppSettings["sharedDirectoryPath"]);
                             break;
                     }
 
@@ -59,7 +56,7 @@ namespace AstTray
                 if (SharedDiretory != null)
                     foreach (var item in SharedDiretory)
                     {
-                        sharedDirectoryListView.Items.Add(new ListViewItem(new[] {item.Name, item.Number}));
+                        sharedDirectoryListView.Items.Add(new ListViewItem(new[] { item.Name, item.Number }));
                     }
 
                 astTrayNotify.ShowBalloonTip(3000, "Connected", "Connected to Asterisk", ToolTipIcon.Info);
@@ -91,7 +88,7 @@ namespace AstTray
 
             foreach (var item in filteredList)
             {
-                list.Items.Add(new ListViewItem(new[] {item.Name, item.Number}));
+                list.Items.Add(new ListViewItem(new[] { item.Name, item.Number }));
             }
 
             list.EndUpdate();
@@ -171,9 +168,7 @@ namespace AstTray
             {
                 var resp = AstCon.SendAction(new OriginateAction
                 {
-                    Channel =
-                        ConfigurationManager.AppSettings["astPeerType"] + "/" +
-                        ConfigurationManager.AppSettings["astPeerID"],
+                    Channel = ConfigurationManager.AppSettings["astPeerType"] + "/" + numberToCall,
                     Exten = numberToCall,
                     Context = ConfigurationManager.AppSettings["astExtenContext"],
                     Priority = "1",
@@ -191,7 +186,7 @@ namespace AstTray
 
         private void LogCall(string numberCalled, string type)
         {
-            callHistoryListView.Items.Add(new ListViewItem(new[] {numberCalled, DateTime.Now.ToString("ddd HH:mm:ss"), type}));
+            callHistoryListView.Items.Add(new ListViewItem(new[] { numberCalled, DateTime.Now.ToString("ddd HH:mm:ss"), type }));
         }
 
         #endregion
@@ -209,18 +204,14 @@ namespace AstTray
             if (e.ChannelStateDesc != null)
             {
                 Debug.Print("New state: " + e.ChannelStateDesc);
-                if (
-                    e.Channel.ToUpper()
-                        .StartsWith(ConfigurationManager.AppSettings["astPeerType"] + "/" +
-                                    ConfigurationManager.AppSettings["astPeerID"]))
+                if (e.Channel.ToUpper().StartsWith(Channel))
                 {
                     // TODO: This could be the result of our Originate! If so, we don't want to do anything... or do we?
                     // this event related to me
                     switch (e.ChannelStateDesc.ToLower())
                     {
                         case "ringing":
-                            astTrayNotify.ShowBalloonTip(3000, "Incoming Call",
-                                $"Incoming call from {e.Connectedlinenum} ({e.ConnectedLineName})", ToolTipIcon.Info);
+                            astTrayNotify.ShowBalloonTip(3000, "Incoming Call", $"Incoming call from {e.Connectedlinenum} ({e.ConnectedLineName})", ToolTipIcon.Info);
 
                             // Screen Popping
                             // Simple implementation at the moment
@@ -258,8 +249,7 @@ namespace AstTray
                 extn = extn.Replace("/", "");
                 extn = extn.Replace("-", "");
 
-                astTrayNotify.ShowBalloonTip(3000, "Answered Call",
-                    $"AMI 1.0 - Answered call from {e.CallerId1} on extn {extn}", ToolTipIcon.Info);
+                astTrayNotify.ShowBalloonTip(3000, "Answered Call", $"AMI 1.0 - Answered call from {e.CallerId1} on extn {extn}", ToolTipIcon.Info);
             }
         }
 
